@@ -150,3 +150,6 @@
 \let \OldBib \bibliography
 \renewcommand{\bibliography}[1]{\newpage \markboth{Bibliografia}{Bibliografia} \OldBib{#1}}
 \bibliographystyle{alpha}
+
+% Comando per il nome dell'app
+\newcommand{\nomeapp}{Metarace}
