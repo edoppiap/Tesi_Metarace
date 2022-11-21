@@ -3,7 +3,7 @@
 
 % --- INIZIO dati relativi al template TesiDiaUniroma3
 % dati obbligatori, necessari al frontespizio
-\titolo{Metarace: un crypto-game di corse dentro un metaverso.}
+\titolo{Progettazione ed implementazione di un crypto-game nel metaverso: \nomeapp{}}
 \autore{Emanuele Pietropaolo}
 \matricola{513489}
 \relatore{Prof. Franco Milicchio}
@@ -19,13 +19,14 @@
 \usepackage[all]{hypcap} % per far si che i link ipertestuali alle immagini puntino all'inizio delle stesse e non alla didascalia sottostante
 \usepackage{amsthm}	% per definizioni e teoremi
 \usepackage{amsmath}	% per ``cases'' environment
+\usepackage{acronym} %per generare lista acronimi
 % --- FINE riachiamo di pacchetti di utilità
 
 \begin{document}
 % ----- Pagine di fronespizio, numerate in romano (i,ii,iii,iv...) (obbligatorio)
 \frontmatter
 \generaFrontespizio
-\generaDedica
+%\generaDedica
 \ringraziamenti{ringraziamenti}	% inserisce i ringraziamenti e li prende in questo caso da ringraziamenti.tex
 \abstractpage{abstract}
 \introduzione{introduzione}		% inserisce l'introduzione e la prende in questo caso da introduzione.tex
@@ -37,8 +38,9 @@
 % il comando ``capitolo'' ha come parametri:
 % 1) il titolo del capitolo
 % 2) il nome del file tex (senza estensione) che contiene il capitolo. Tale nome \`e usato anche come label del capitolo
-\capitolo{Esempio di Capitolo}{capitolo-1}
-\capitolo{Altro Esempio di Capitolo}{capitolo-2}
+\capitolo{Descrizione}{capitolo-1}
+\capitolo{Network}{capitolo-2}
+\capitolo{Mappa di gioco e modellazione}{capitolo-3}
 
 % ----- Parte finale della tesi (obbligatorio)
 \backmatter
