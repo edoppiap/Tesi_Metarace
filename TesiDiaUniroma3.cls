@@ -149,7 +149,7 @@
 % Bibliografia in ordine alfabetico
 \let \OldBib \bibliography
 \renewcommand{\bibliography}[1]{\newpage \markboth{Bibliografia}{Bibliografia} \OldBib{#1}}
-\bibliographystyle{alpha}
+\bibliographystyle{abbrv}
 
 % Comando per il nome dell'app
 \newcommand{\nomeapp}{Metarace}
