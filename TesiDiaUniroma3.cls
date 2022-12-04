@@ -135,6 +135,36 @@
 \newcommand{\conclusioni}[1]{\newpage \chapter{Conclusioni e sviluppi futuri} \markboth{CONCLUSIONI E SVILUPPI FUTURI}{CONCLUSIONI E SVILUPPI FUTURI} \input{#1}}
 \newcommand{\capitolo}[2]{\newpage \chapter{#1}\label{cap:#2}\input{#2}}
 
+\newcommand{\definisciStileCodici}{
+   \definecolor{codegreen}{rgb}{0,0.6,0}
+   \definecolor{codegray}{rgb}{0.5,0.5,0.5}
+   \definecolor{codepurple}{rgb}{0.14,0.92,0.194}
+   \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+   \lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language = C++
+   }
+
+   \lstset{style=mystyle}
+   \renewcommand{\lstlistingname}{Algoritmo}
+}
+
 % Comandi riguardanti la generazione di indici
 \newcommand{\generaIndice}{
 	%\fancyhead[L]{\textbf{\rightmark}}
@@ -145,6 +175,10 @@
 }
 \newcommand{\generaIndiceTabelle}{\newpage \listoftables}
 \newcommand{\generaIndiceFigure}{\newpage \listoffigures}
+\newcommand{\generaIndiceCodice}{
+   \renewcommand{\lstlistlistingname}{Elenco degli algoritmi} 
+   \newpage \lstlistoflistings
+}
 
 % Bibliografia in ordine alfabetico
 \let \OldBib \bibliography
