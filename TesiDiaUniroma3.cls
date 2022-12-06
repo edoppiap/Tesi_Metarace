@@ -144,10 +144,12 @@
    \lstdefinestyle{mystyle}{
     backgroundcolor=\color{backcolour},   
     commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
+    keywordstyle=\color{purple},
+    keywordstyle=[2]\color{blue},
     numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
+    stringstyle=\color{orange},
     basicstyle=\ttfamily\footnotesize,
+    xleftmargin=\parindent,
     breakatwhitespace=false,         
     breaklines=true,                 
     captionpos=b,                    
@@ -158,7 +160,9 @@
     showstringspaces=false,
     showtabs=false,                  
     tabsize=2,
-    language = C++
+    language = C++,    
+    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, World, UCurveFloat, nullptr},
+    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS}
    }
 
    \lstset{style=mystyle}

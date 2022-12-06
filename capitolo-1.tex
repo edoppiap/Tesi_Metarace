@@ -212,7 +212,7 @@
         %
         Tutto questo rende il loro sistema potenzialmente già compatibile con centinaia di contenuti velocizzando il processo di migrazione di applicativi all'interno del Metaverso.
 
-        \begin{figure}[h!]
+        \begin{figure}[!ht]
             \centering
             \includegraphics[height=6cm]{figure/TheMandalorianUnreal.jpg}
             \caption{Set di The Mandalorian con scenografia renderizzata con Unreal Engine}
@@ -239,7 +239,7 @@ Sweeney sviluppò l'editor di Unreal engine in Visual Basic e prese fortemente i
 %
 Infatti già dalle prime versioni di Unreal Engine c'erano dei moduli che si potevano trascinare nella scena direttamente, poi una volta nella scena bastava fare un doppio click su di essi per far comparire l'editor di testo e poter scrivere il codice desiderato \cite{InterviewSweeney}.
 
-\begin{figure}[h!] 
+\begin{figure}[!ht] 
     \begin{center}
     \begin{tabular}{c @{\hspace{1em}} c}
     \includegraphics[width=6.5cm]{figure/UnrelEngineEditor1.jpg} &
@@ -259,33 +259,33 @@ Sono ancora presenti le classi native principali Actor, Pawn e Character: la cla
 Alla creazione di una classe l'editor fa scegliere la parent class e in base alla scelta viene generato automaticamente il rispettivo script di base \cite{UProgrIntro}.
 
 \begin{lstlisting}[caption = File header generato alla creazione di un Actor]
-    #include "GameFramework/Actor.h"
-    #include "MyActor.generated.h"
+#include "GameFramework/Actor.h"
+#include "MyActor.generated.h"
 
-    UCLASS()
-    class AMyActor : public AActor
-    {
-        GENERATED_BODY()
+UCLASS()
+class AMyActor : public AActor
+{
+    GENERATED_BODY()
 
-    public:
+public:
 
-        //Sets default values for this actor's properties
-        AMyActor();
+    //Sets default values for this actor's properties
+    AMyActor();
 
-        //Called when the game starts or when spawned
-        virtual void BeginPlay() override;
+    //Called when the game starts or when spawned
+    virtual void BeginPlay() override;
 
-        //Called every frame
-        virtual void Tick(float DeltaSeconds) override;
+    //Called every frame
+    virtual void Tick(float DeltaSeconds) override;
 
-    };
+};
 \end{lstlisting}
 
 È possibile inoltre esporre una variabile dello script all'editor tramite appositi specificatori, espandibili con una lista di proprietà tra cui scegliere:
 
 \begin{lstlisting}[caption = Specificatore UPROPERTY per esporre una variabile all'editor]
-    UPROPERTY(EditAnywhere, category="VariableCategory")
-    int32 MyVariable;
+UPROPERTY(EditAnywhere, category="VariableCategory")
+int32 MyVariable;
 \end{lstlisting}
 
 Anche l'impostazione iniziale organizzata in moduli è stata mantetuta.
@@ -306,7 +306,7 @@ L'interfaccia utente è composta da diverse finestre ed è altamente personalizz
 %
 Alla prima accensione dell'engine viene proposto il layout di default.
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \centering
     \includegraphics[height=6cm]{figure/02-default-interface-windows.jpg}
     \caption{Interfaccia di default di Unreal Engine 5}
@@ -349,7 +349,7 @@ Infatti bisogna fare particolare attenzione all'utilizzo dei puntatori, e delle 
 %
 Inoltre, questo tipo di errori sono spesso di difficile interpretazione.
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \centering
     \includegraphics[height=3cm]{figure/BlueprintClass.jpg}
     \caption{Esempio di classe Blueprint per l'apertura e la chiusura di una porta in gioco}
@@ -381,12 +381,6 @@ La fondazione lanciò una campagna di crowdfunding che raccolse centodiecimila e
 %
 Oggi lo sviluppo di Blender continua grazie alla numerosa community e a 24 dipendenti della Blender Institute.
 
-\begin{figure}[b]
-    \centering
-    \includegraphics[height=6cm]{figure/Blender_3.1.0_screenshot.png}
-    \caption{Interfaccia di Blender 3.1.0}
-\end{figure}
-
 Dal lancio del software come open source l'interfaccia utente è cambiata e il motore di render si è evoluto ma le caratteristiche principali sono rimaste invariate.
 %
 Una delle caratteristiche principali di Blender è che è possibile chiamare quasi tutte le funzioni tramite scorciatoie da tastiera. 
@@ -399,7 +393,19 @@ Un'altra caratteristica di Blender è che lo spazio di lavoro è totalmente ad o
 %
 L'utente può personalizzare la combinazione di finestre e viste per ognuna delle operazioni che preferisce e può posizionare questi layout in schede similmente a come avviene in un browser web.
 %
-Il programma offre già layout di default per lavorare a compiti diversi. 
+Il programma offre già layout di default per lavorare a compiti diversi.
+
+Blender permette di creare delle Mesh poligonali e di esportarle in formati compatibili con altri programmi 3D, compreso Unreal Engine. 
+%
+Una Mesh poligonale è una struttura dati che rappresenta oggetti nello spazio 3D.
+%
+In inglese significa maglia perché è strutturata come un reticolo. 
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=7.5cm]{figure/MeshPoligonale.png}
+    \caption{Una Mesh poligonale in Blender}
+\end{figure}
 
 
     % focus sul progresso tecnologico che resterà nonostante questa sia una bolla finanziaria che scoppierà
