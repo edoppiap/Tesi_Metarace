@@ -152,7 +152,7 @@
     xleftmargin=\parindent,
     breakatwhitespace=false,         
     breaklines=true,                 
-    captionpos=b,                    
+    captionpos=t,                    
     keepspaces=true,                 
     numbers=left,                    
     numbersep=5pt,                  
@@ -161,8 +161,8 @@
     showtabs=false,                  
     tabsize=2,
     language = C++,    
-    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, World, UCurveFloat, nullptr},
-    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS}
+    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, UWorld, UCurveFloat, nullptr, TArray, TMap, FString, TSubclassOf},
+    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS, DECLARE_DELEGATE_OneParam, BindUObject}
    }
 
    \lstset{style=mystyle}

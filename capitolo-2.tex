@@ -18,7 +18,7 @@
     %
     L'idea di Metarace è di riproporre questa formula in un ambiente virtuale immersivo, nel Metaverso.
 
-\section{La meccanica di base}
+\section{La meccanica di base} \label{sec:Meccanica}
 
     Una partita di Metarace consiste in una gara di cavalli in cui c'è sempre un vincitore, con una piccola probabilità di pareggio.
     %
@@ -102,7 +102,7 @@ void AHorse::StartTimeline()
         %
         È possibile eseguire un interpolazione tra 0 e la lunghezza della Spline basata su questo valore e ottenere così una posizione lungo la Spline.
         %
-        La posizione trovata viene poi utilizzata dall'Actor che si sposta nella posizione trovata.
+        La posizione dell'Actor viene quindi impostata uguale alla posizione trovata.
 
         \begin{lstlisting}[caption = Funzione che sfrutta il valore restituito dalla timeline nel tempo  (movimento cavallo)]
 void AHorse::RaceTimelineProgress(float Value)
@@ -259,7 +259,7 @@ void AHorse::Inizialize()
 
     \begin{figure}[!ht]
         \centering
-        \includegraphics[width=10cm]{figure/HorseAnimGraph.JPG}
+        \includegraphics[height=7cm]{figure/HorseAnimGraph.JPG}
         \caption{\textit{AnimGraph} che gestisce l'animazione del cavallo.}
         \label{fig:AnimGraph}
     \end{figure}
@@ -290,13 +290,13 @@ void AHorse::Inizialize()
 
     \begin{figure}[!ht]
         \centering
-        \includegraphics[width=10cm]{figure/HorseBlendSpaceGalop.JPG}
+        \includegraphics[height=7cm]{figure/HorseBlendSpaceGalop.JPG}
         \caption{\textit{BlandSpace2D} per l'interpolazione delle animazioni sulla base della velocità.}
     \end{figure}
 
     Come si può vedere dalla Figura \ref{fig:AnimGraph}, il valore di input per il BlandSpace è utilizzato anche come valore di blend tra il \textit{BlendSpace2D} e il \textit{Random Sequence Player}.
     %
-    Questo perché quando il valore di input è nullo vuol dire che si è raggiunti l'andatura in cui è possibile riprodurre una tra le animazioni di \textit{Idle} e perciò ne viene riprodotta una casualmente. 
+    Questo perché quando il valore di input è nullo vuol dire che si è raggiunta l'andatura in cui è possibile riprodurre una tra le animazioni di \textit{Idle} e perciò ne viene riprodotta una casualmente. 
 
     \subsection{Animazione del galoppo creata con Blender}
 
@@ -322,26 +322,33 @@ void AHorse::Inizialize()
     %
     Spesso il modo migliore per crearne una è partire da una reference del mondo reale e così ho fatto.
     %
-    Sono partito da un'immagine che rappresenta lo studio alla base dell'animazione del galoppo diviso in 12 frame e ho cercato di far combaciare la posizione della mesh con quella che si vede nell'immagine per ogni singolo frame. 
+    Sono partito da un'immagine che rappresenta lo studio alla base dell'animazione del galoppo diviso in 12 frame e ho cercato di far combaciare la posizione della mesh con quella che si vede nell'immagine per ogni singolo frame.
 
-    \begin{figure}[!ht] 
-        \begin{center}
-        \begin{tabular}{c @{\hspace{1em}} c}
-        \includegraphics[height=5.5cm]{figure/HorseAnimation.jpg} &
-        \includegraphics[height=5.5cm]{figure/PoseMode2.JPG} \\
-         (a) & (b)
-        \end{tabular}
-        \end{center}
-        \caption{12 frame disegnati di un cavallo al galoppo (a) Schermata in cui è possibile vedere la Pose Mode di Blender, l'Action Editor con le keyframe, la mesh del cavallo in una pose con il suo scheletro e l'immagine utilizzata come reference. (b)}
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[height=6.5cm]{figure/HorseAnimation.jpg}
+        \caption{12 frame disegnati di un cavallo al galoppo}
+    \end{figure}
+
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[height=6.5cm]{figure/PoseMode2.JPG}
+        \caption{Schermata in cui è possibile vedere la Pose Mode di Blender, l'Action Editor con le keyframe, la mesh del cavallo in una pose con il suo scheletro e l'immagine utilizzata come reference.}
     \end{figure}
     
     \section{Progettazione del mondo 3D}
 
-    \subsection{Unreal Engine}
+    Uno degli elementi più importanti quando si parla della costruzione di un mondo immersivo è la creazione del livello 3D.
+    %
+    Per costruire il livello di gioco sono state utilizzate diverse tecniche offerte dal motore grafico Unreal Engine ma sono stati utilizzati anche degli strumenti offerti dalla suite 3D Blender.
+    %
+    Unreal Engine infatti permettete di riempire il livello di oggetti con varie tecniche diverse ma questi oggetti devono inizialmente essere creati da un software di modellazione come Blender oppure importati da un asset del marketplace.
 
     \subsection{I modelli 3D}
 
-    Per creare le mesh per questo progetto è stato scelto il software Blender per via della sua natura multipiattaforma e per la leggerezza di utilizzo.
+    La suite Blender, oltre che per la creazione dell'animazione del galoppo, è stata usata per creare le mesh per questo progetto.
+    %
+    È stata scelta questa suite per via della sua natura multipiattaforma e per la leggerezza di utilizzo.
     %
     Questo software è stato utilizzato per creare delle mesh interamente e per modificare asset di gioco già esistenti.  
 
@@ -355,9 +362,9 @@ void AHorse::Inizialize()
     %
     Venne chiamata Suzanne come la scimmia del film \textit{Jay and Silent Bob... Fermate Hollywood!}
     %
-    Da quel momento Suzanne divenne l'alternativa utilizzabile in Blender come modello di test, oltre ai più comuni Utah Teapot e lo Stanford Bunny,  per provare materiali, texture ed altro.
+    Da quel momento Suzanne divenne l'alternativa utilizzabile in Blender come modello di test, oltre ai più comuni Utah Teapot e Stanford Bunny,  per provare materiali, texture ed altro.
 
-    Le mesh sono costituite da tre elementi di base: vertici, facce e spigoli. 
+    Generalmente, le mesh sono costituite da tre elementi di base: vertici, facce e spigoli. 
     %
     Blender permette di modificare la mesh agendo direttamente su questi elementi utilizzando la Edit Mode.    
     %
@@ -386,9 +393,82 @@ void AHorse::Inizialize()
     %
     Per questo motivo le mesh sono state create facendo in modo che il numero dei vertici fosse il più basso possibile.
 
-    \section{Analisi del software}
+    Sono state inoltre utilizzate due tecniche di UV mapping (mappatura UV) per la creazione di texture del gioco.
+    %
+    La mappatura UV è una tecnica che permette di proiettare una o più texture 2D su di un oggetto 3D.
+    %
+    Le lettere U e V fanno riferimento ai due assi dell'immagine 2D e vegnono usate al posto di X e Y in quanto queste ultime vengono già utilizzate con riferimento agli assi dell'ambiente 3D.
+    %
+    Vista la natura low poly del gioco, la tecnica principale per la creazione di texture è stata quella di utilizzare una singola immagine per il maggior numero di elementi.
+    %
+    È possibile infatti creare una texture estremamente leggera costituita da una palette di colori scelti, fare lo unwrap della texture e ridimensionare le UV islands delle facce condensandole in un unico punto della texture in cui è presente il colore che andrà a riempire le facce corrispondenti.
 
-    \subsection{Modello degli eventi}
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[width=10cm]{figure/BlenderLowPolyTexturing.JPG}
+        \caption{Esempio di associazione di UV islands a singoli colori di una sola texture}
+    \end{figure}
+    
+    Questo riduce il numero di istanze di materiali diversi che dovranno esserci nel gioco sia la complessità nel creare le texture stesse e il relativo UVMapping.
+
+    Questa tecnica è una semplificazione della più classica tecnica di mappatura UV dove le UV islands vengono direttamente posizionate sopra la texture in modo che ad ogni faccia corrisponda una particolare zona della texture.
+    %
+    Il vantaggio di questa tecnica è che è possibile aggiungere della complessità visiva ad una faccia senza aggiungere complessità geometrica.
+    %
+    Ad esempio per alcuni oggetti di gioco in cui le facce hanno dei pannelli di legno o dei mattoni quelle sono texture assegnate con la tecnica della mappatura UV classica.
+
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[width=6cm]{figure/UVUnwrapping.png}
+        \caption{Schema di funzionamento dell'unwrapping \cite{UVMapsWiki}}
+    \end{figure}
+
+    \subsection{Strumenti forniti da Unreal Engine}
+
+    Una volta create le mesh, queste sono state importate all'interno di Unreal Engine.
+    
+    Una delle tecniche utilizzate per comporre il livello di gioco è stata quella di utilizzare oggetti modulari.
+    %
+    Ossia oggetti composti da un insieme di mesh statiche che unite insieme possono creare combinazioni anche molto diverse tra loro.
+    %
+    Questa tecnica ha il vantaggio di ridurre il numero di asset di gioco utilizzati senza perdere l'unicità degli ambienti che è possibile creare.
+    %
+    Tutti gli edifici in scena sono stati creati utilizzando questa tecnica.
+    
+    \begin{figure}[t]
+        \centering
+        \includegraphics[height= 7cm]{figure/UnrealEngine5Editor.png}
+        \caption{Utilizzo del Foliage Tools in Unreal Engine}
+    \end{figure}
+
+    Inoltre Unreal Engine permette di aggiungere mesh di gioco in maniera rapida grazie al Foliage Tools.
+    %
+    Come detto in \ref{sec:Unreal}, è possibile accede alla Foliage Mode tramite il menu delle modalità.
+    %
+    Questo strumento permette di renderizzare Static Mesh o Actor Foliage sulla superficie di altre geometrie per usarle come effetto di copertura del terreno.
+    %
+    Tutta la natura presente in Metarace è stata distribuita nel mondo di gioco con questo strumento.
+
+    Un'altro strumento utilizzato è stato il Landscape Tools per la generazione di terreno.
+    %
+    Per creare scenari molto grandi è meglio utilizzare questa tecnica piuttosto che le Static Mesh perché utilizza solo 4 bytes per i dati di ciascun vertice.
+    %
+    Le Static Meshes utilizzano invece 12 byte per vertice, più i dati per le tangenti X e Z per ogni faccia racchiuse in 4 byte ciascuno più  da 16 a 32 bit per i dati UV per un totale di 24 o 28 byte a vertice \cite{ULandscape}.
+    %
+    Inoltre questo strumento fornisce una serie di implementazioni atte ad aumentare l'ottimizzazione del rendering.
+    %
+    Infatti il sistema di Landscape salva i dati di render del terreno nella memoria dedicata della scheda grafica sotto forma di texture, oltre che supportare il caricaemento delle zone distanti del landscape in LOD (Level Of Details) via via meno complessi geometricamente.
+
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[height=7.5cm]{figure/NaveDaSpaltiCropped.png}
+        \caption{Schermata che riprende la vista dagli spalti del percorso}
+    \end{figure}
+    
+
+    %\section{Analisi del software}
+
+    %\subsection{Modello degli eventi}
 
 % Creare una storia
 
