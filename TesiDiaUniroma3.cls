@@ -144,13 +144,15 @@
    \lstdefinestyle{mystyle}{
     backgroundcolor=\color{backcolour},   
     commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
+    keywordstyle=\color{purple},
+    keywordstyle=[2]\color{blue},
     numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
+    stringstyle=\color{orange},
     basicstyle=\ttfamily\footnotesize,
+    xleftmargin=\parindent,
     breakatwhitespace=false,         
     breaklines=true,                 
-    captionpos=b,                    
+    captionpos=t,                    
     keepspaces=true,                 
     numbers=left,                    
     numbersep=5pt,                  
@@ -158,7 +160,9 @@
     showstringspaces=false,
     showtabs=false,                  
     tabsize=2,
-    language = C++
+    language = C++,    
+    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, UWorld, UCurveFloat, nullptr, TArray, TMap, FString, TSubclassOf, AActor, constexpr},
+    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS, UFUNCTION, DECLARE_DELEGATE_OneParam, DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam, BindUObject, AddDynamic, CALLBACK}
    }
 
    \lstset{style=mystyle}
@@ -167,7 +171,7 @@
 
 % Comandi riguardanti la generazione di indici
 \newcommand{\generaIndice}{
-	%\fancyhead[L]{\textbf{\rightmark}}
+	\fancyhead[L]{\textbf{\rightmark}}
 	\newpage
 	\tableofcontents
 	\clearpage
