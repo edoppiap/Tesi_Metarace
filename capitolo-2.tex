@@ -2,7 +2,7 @@
 %\section{Analisi di mercato}
 \section{Metarace}
 
-    Metarace è un progetto in Unreal Engine che punta a sfruttare i dispositivi AR/VR per far immergere l'utente in un mondo virtuale di competizioni equestri.
+    Metarace è un progetto in Unreal Engine 5 che punta a sfruttare i dispositivi AR/VR per far immergere l'utente in un mondo virtuale di competizioni equestri.
     %
     Si definisce un progetto nel Metaverso perché punta ad avere le caratteristiche che definiscono tutte le piattaforme attualmente vicine a questo concetto: una rappresentazione digitale della persona sotto forma di avatar, un ambiente virtuale in cui è possibile interagire e socializzare con altri utenti, degli oggetti di gioco personalizzabili e portabili al di fuori di Metarace, un'economia interna e una progettazione focalizzata sulla scalabilità per permettere in futuro di aggiornare l'applicativo all'arrivo di nuove tecnologie.
     %
@@ -38,7 +38,7 @@
 
     \subsection{L'algoritmo per il movimento dei cavalli}
 
-        Lo strumento più adatto tra quelli messi a disposizione da Unreal Engine per implementare questa meccanica è la Spline Component.
+        Lo strumento più adatto tra quelli messi a disposizione da Unreal Engine 5 per implementare questa meccanica è la Spline Component.
         %
         Una Spline Component è un percorso che lo sviluppatore può definire per utilizzare dati posizionali.
         %
@@ -50,7 +50,7 @@
         %
         Questo in Unreal è possibile farlo attraverso una Timeline.
         %
-        Una Timeline è uno strumento offerto da Unreal Engine che permette di ottenere dei valori di output nel tempo basati su una Curve impostata inizialmente.
+        Una Timeline è uno strumento offerto da Unreal Engine 5 che permette di ottenere dei valori di output nel tempo basati su una Curve impostata inizialmente.
 
         Quello che ho implementato è stato di creare una classe C++ che rappresenta il cavallo e un Blueprint che la estendeva.
         %
@@ -194,7 +194,20 @@ void AHorse::Inizialize()
             S_{i = 0..n} =  \Delta S (i+1)
         \end{equation}
 
-        Inoltre l'ultima key generata non ha interpolazione per evitare che i cavalli prima dell'arrivo inizino a rallentare.
+        Infine è stato scelto di non interpolare l'ultima key generata perché questo comporterebbe la generazione di una CurveFloat che riporterebbe a zero la velocità all'avvicinarsi del traguardo.
+        %
+        Si può notare la differenza nella curva generata nella Figura: \ref{img:CurveFloatParagone}.
+
+        \begin{figure}[!ht] \label{img:CurveFloatParagone}
+            \begin{center}
+            \begin{tabular}{c @{\hspace{1em}} c}
+            \includegraphics[width=10cm]{figure/CurveFloatConInterpolazione.png} & (a) \\
+            \includegraphics[width=10cm]{figure/CurveFloatSenzaInterpolazione.png} & (b)
+            \end{tabular}
+            \end{center}
+            \caption{CurveFloat generata con tutti i nodi interpolati (a) CurveFloat generata con tutti i nodi interpolati eccetto l'ultimo. (b)}
+        \end{figure}
+
 
         \begin{lstlisting}[firstnumber=22]
     for (int i = 0; i<TimeArray.Num(); i++)
@@ -245,13 +258,19 @@ void AHorse::Inizialize()
         %
         Questa curva garantisce un cambiamento di velocità fluido del cavallo durante tutta la gara nonostante, dall'immagine, i cambiamenti di coefficiente angolare non siano apprezzabili.
 
+        Infine è stata utilizzata una seconda \textit{Timeline} per la decellerazione del cavallo che avviene dopo il traguardo.
+        %
+        In questo contesto la Timeline è stata utilizzata per creare una decellerazione coerente con la velocità posseduta da ogni cavallo al momento del passaggio al traguardo: più un cavallo arriva veloce al traguardo più spazio percorrerà per fermarsi.
+        %
+        In questo caso però la curva di input per la Timeline è fissa. 
+
     \section{Animazione dei cavalli}
 
     I cavalli non soltanto si muovono lungo il percorso ma possiedono una serie di animazioni che vengono riprodotte in base allo stato in cui si trovano e alla velocità che possiedono.
     %
     I cavalli infatti sono delle Mesh associate ad uno scheletro gerarchico di ossa che può essere animato per muovere la Mesh.
     %
-    Questo tipo di Mesh vengono gestite con Unreal Engine come delle Skeletal Mesh. 
+    Questo tipo di Mesh vengono gestite da Unreal Engine come delle Skeletal Mesh. 
     %
     Per la gestione delle animazioni in Unreal Engine si può utilizzare uno strumento chiamato \textit{AnimGraph}.
     %
@@ -304,6 +323,12 @@ void AHorse::Inizialize()
     %
     Per questo motivo ho ideato e creato l'animazione in questione nella suite Blender.
 
+    \begin{figure}[b]
+        \centering
+        \includegraphics[width=.9\textwidth]{figure/HorseRig.JPG}
+        \caption{Vista in Blender della Mesh del cavallo, con il suo rig associato, in una pose tra le 12 dell'animazione del galoppo}
+    \end{figure}
+
     La suite Blender permette di animare qualsiasi tipo di oggetto e qualsiasi tipo di deformazione o traslazione tramite la tecnica di inserimento di \textit{keyframe poses} all'interno di una finestra apposita: l'Action Editor. 
     %
     Letteralmente keyframe pose vuol dire "posa del fotogramma chiave", questo perché questa tecnica prevede di salvare tutti i dati sul Transform (quindi su posizione, rotazione e scala) di uno o più oggetti all'interno di vari frame che riprodotti in sequenza andranno a creare l'effetto di movimento che compone l'animazione.
@@ -312,35 +337,45 @@ void AHorse::Inizialize()
     %
     Infatti muovendo una o più ossa si andrà a deformare la mesh senza cambiarne la geometria ma solo cambiandole la posizione, creando una pose, e salvando queste pose nelle keyframe si potrà salvare ed esportare la riproduzione delle keyframe come un'animazione.
 
-    \begin{figure}[!ht]
-        \centering
-        \includegraphics[width=10cm]{figure/HorseRig.JPG}
-        \caption{Vista in Blender della Mesh del cavallo, con il suo rig associato, in una pose tra le 12 dell'animazione del galoppo}
-    \end{figure}
-
     Creare animazioni convincenti è un'arte molto complessa che va studiata a fondo.
     %
     Spesso il modo migliore per crearne una è partire da una reference del mondo reale e così ho fatto.
     %
-    Sono partito da un'immagine che rappresenta lo studio alla base dell'animazione del galoppo diviso in 12 frame e ho cercato di far combaciare la posizione della mesh con quella che si vede nell'immagine per ogni singolo frame.
+    Sono partito da un'immagine che rappresenta lo studio alla base del movimento del galoppo diviso in 12 frame e ho cercato di far combaciare la posizione della mesh con quella che si vede nell'immagine per ogni singolo frame.
 
     \begin{figure}[!ht]
         \centering
-        \includegraphics[height=6.5cm]{figure/HorseAnimation.jpg}
+        \includegraphics[width=.9\textwidth]{figure/HorseAnimation.jpg}
         \caption{12 frame disegnati di un cavallo al galoppo}
     \end{figure}
 
     \begin{figure}[!ht]
         \centering
-        \includegraphics[height=6.5cm]{figure/PoseMode2.JPG}
+        \includegraphics[width=.9\textwidth]{figure/PoseMode2.JPG}
         \caption{Schermata in cui è possibile vedere la Pose Mode di Blender, l'Action Editor con le keyframe, la mesh del cavallo in una pose con il suo scheletro e l'immagine utilizzata come reference.}
     \end{figure}
+
+    
+    \begin{figure}[b]
+        \centering
+        \includegraphics[width=.8\textwidth]{figure/Muybridge.jpg}
+        \caption{Sequenza di 16 scatti con cui Muybridge dimostrò che i cavalli non toccano terra durante il galoppo.}
+    \end{figure}
+
+    L'analisi dei frame è stata usata la prima volta nel 1878 da Eadweard Muybridge proprio per studiare il movimento del cavallo al galoppo.
+    %
+    Muybridge fu incaricato da Leland Stanford, ex-governatore della California, di trovare una prova che certificasse che i cavalli non toccano terra durante il galoppo.
+    %
+    Per analizzare il movimento del cavallo in galoppo pensò allora di catturare in una sequenza di 16 foto un ciclo intero del movimento.
+    %
+    Grazie a questa tecnica Muybridge dimostrò che il cavallo non tocca terra.
+
     
     \section{Progettazione del mondo 3D}
 
     Uno degli elementi più importanti quando si parla della costruzione di un mondo immersivo è la creazione del livello 3D.
     %
-    Per costruire il livello di gioco sono state utilizzate diverse tecniche offerte dal motore grafico Unreal Engine ma sono stati utilizzati anche degli strumenti offerti dalla suite 3D Blender.
+    Per costruire il livello di gioco sono state utilizzate diverse tecniche offerte dal motore grafico Unreal Engine 5 ma sono stati utilizzati anche degli strumenti offerti dalla suite 3D Blender.
     %
     Unreal Engine infatti permettete di riempire il livello di oggetti con varie tecniche diverse ma questi oggetti devono inizialmente essere creati da un software di modellazione come Blender oppure importati da un asset del marketplace.
 
@@ -373,9 +408,8 @@ void AHorse::Inizialize()
     \begin{figure}[!ht] 
         \begin{center}
         \begin{tabular}{c @{\hspace{1em}} c}
-        \includegraphics[width=6.5cm]{figure/TerrenoDiGioco.png} &
-        \includegraphics[width=6.5cm]{figure/BlenderModels.JPG} \\
-         (a) & (b)
+        \includegraphics[width=.9\textwidth]{figure/TerrenoDiGioco.png} & (a) \\
+        \includegraphics[width=.9\textwidth]{figure/BlenderModels.JPG} & (b)
         \end{tabular}
         \end{center}
         \caption{Terreno di gioco in Blender (a) Altri modelli in Blender. (b)}
@@ -393,6 +427,12 @@ void AHorse::Inizialize()
     %
     Per questo motivo le mesh sono state create facendo in modo che il numero dei vertici fosse il più basso possibile.
 
+    \begin{figure}[b]
+        \centering
+        \includegraphics[width=.9\textwidth]{figure/BlenderLowPolyTexturing.JPG}
+        \caption{Esempio di associazione di UV islands a singoli colori di una sola texture}
+    \end{figure}
+
     Sono state inoltre utilizzate due tecniche di UV mapping (mappatura UV) per la creazione di texture del gioco.
     %
     La mappatura UV è una tecnica che permette di proiettare una o più texture 2D su di un oggetto 3D.
@@ -403,11 +443,7 @@ void AHorse::Inizialize()
     %
     È possibile infatti creare una texture estremamente leggera costituita da una palette di colori scelti, fare lo unwrap della texture e ridimensionare le UV islands delle facce condensandole in un unico punto della texture in cui è presente il colore che andrà a riempire le facce corrispondenti.
 
-    \begin{figure}[!ht]
-        \centering
-        \includegraphics[width=10cm]{figure/BlenderLowPolyTexturing.JPG}
-        \caption{Esempio di associazione di UV islands a singoli colori di una sola texture}
-    \end{figure}
+    
     
     Questo riduce il numero di istanze di materiali diversi che dovranno esserci nel gioco sia la complessità nel creare le texture stesse e il relativo UVMapping.
 
@@ -420,12 +456,12 @@ void AHorse::Inizialize()
     \begin{figure}[!ht]
         \centering
         \includegraphics[width=6cm]{figure/UVUnwrapping.png}
-        \caption{Schema di funzionamento dell'unwrapping \cite{UVMapsWiki}}
+        \caption{Schema di funzionamento dell'unwrapping }
     \end{figure}
 
-    \subsection{Strumenti forniti da Unreal Engine}
+    \subsection{Strumenti forniti da Unreal Engine 5}
 
-    Una volta create le mesh, queste sono state importate all'interno di Unreal Engine.
+    Una volta create le mesh, queste sono state importate all'interno di Unreal Engine 5.
     
     Una delle tecniche utilizzate per comporre il livello di gioco è stata quella di utilizzare oggetti modulari.
     %
@@ -438,7 +474,7 @@ void AHorse::Inizialize()
     \begin{figure}[t]
         \centering
         \includegraphics[height= 7cm]{figure/UnrealEngine5Editor.png}
-        \caption{Utilizzo del Foliage Tools in Unreal Engine}
+        \caption{Utilizzo del Foliage Tools in Unreal Engine 5}
     \end{figure}
 
     Inoltre Unreal Engine permette di aggiungere mesh di gioco in maniera rapida grazie al Foliage Tools.
@@ -449,6 +485,12 @@ void AHorse::Inizialize()
     %
     Tutta la natura presente in Metarace è stata distribuita nel mondo di gioco con questo strumento.
 
+    \begin{figure}[b]
+        \centering
+        \includegraphics[width=.9\textwidth]{figure/NaveDaSpaltiCropped.png}
+        \caption{Schermata che riprende la vista dagli spalti del percorso}
+    \end{figure}
+
     Un'altro strumento utilizzato è stato il Landscape Tools per la generazione di terreno.
     %
     Per creare scenari molto grandi è meglio utilizzare questa tecnica piuttosto che le Static Mesh perché utilizza solo 4 bytes per i dati di ciascun vertice.
@@ -457,13 +499,9 @@ void AHorse::Inizialize()
     %
     Inoltre questo strumento fornisce una serie di implementazioni atte ad aumentare l'ottimizzazione del rendering.
     %
-    Infatti il sistema di Landscape salva i dati di render del terreno nella memoria dedicata della scheda grafica sotto forma di texture, oltre che supportare il caricaemento delle zone distanti del landscape in LOD (Level Of Details) via via meno complessi geometricamente.
+    Infatti il sistema di Landscape salva i dati di render del terreno nella memoria dedicata della scheda grafica sotto forma di texture, oltre che supportare il caricamento delle zone distanti del landscape in LOD (Level Of Details) via via meno complessi geometricamente.
 
-    \begin{figure}[!ht]
-        \centering
-        \includegraphics[height=7.5cm]{figure/NaveDaSpaltiCropped.png}
-        \caption{Schermata che riprende la vista dagli spalti del percorso}
-    \end{figure}
+    
     
 
     %\section{Analisi del software}

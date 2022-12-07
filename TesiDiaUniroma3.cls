@@ -171,7 +171,7 @@
 
 % Comandi riguardanti la generazione di indici
 \newcommand{\generaIndice}{
-	%\fancyhead[L]{\textbf{\rightmark}}
+	\fancyhead[L]{\textbf{\rightmark}}
 	\newpage
 	\tableofcontents
 	\clearpage

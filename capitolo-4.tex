@@ -5,9 +5,13 @@
 
 %\section{L'implementazione del VR}
 
-\section{Architettura Client - Server e la WebSocket}
+Una parte importante dell'architettura di Metarace è la sua architettura client-server.
+%
+Infatti è questa che gli permette di interfacciarsi con il server e di scambiare tutti i messaggi che guideranno il flusso del programma.
 
-Metarace è quindi un applicativo con struttura client-server e si collega al server con un canale di comunicazione bidirezionale basato sul protocollo WebSocket.
+\section{Architettura Client - Server e WebSocket}
+
+Metarace si collega al server con un canale di comunicazione bidirezionale basato sul protocollo WebSocket.
 %
 Questo protocollo è stato scelto per due motivi: il primo è che permette di tenere aperta una connessione tra client e server fino a che non viene terminata da uno dei due partecipanti; il secondo è che non è necessario definire il protocollo di comunicazione dato che si basa sul diffuso protocollo TCP.
 
@@ -17,9 +21,9 @@ Una connessione WebSocket è instaurata con un handshake specifico basato sul pr
 %
 A seguito di questo handshake il protocollo di comunicazione cambia, e passa da HTTP a WebSocket tramite la connessione TCP utilizzata inizialmente. 
 
-Unreal Engine fornisce supporto per l'utilizzo dei WebSocket tramite il modulo \textit{IWebSocket} \cite{UWebSocket}. Per poter utilizzare questo modulo bisogna aggiungere la dependency all'interno del file ".build.cs". Qui è mostrato il codice con l'aggiunta di tutte le dependencies utilizzate nel progetto:
+Unreal Engine 5 fornisce supporto per l'utilizzo dei WebSocket tramite il modulo \textit{IWebSocket} \cite{UWebSocket}. Per poter utilizzare questo modulo bisogna aggiungere la dependency all'interno del file ".build.cs" nel quale vengono specificate le dipendenze a componenti e plugin esterni all'engine di gioco permettendo la compilazione del progetto. Qui è mostrato il codice, in Algoritmo \ref{alg:build}:
 
-\begin{lstlisting}[caption = Metarace.build.cs file]
+\begin{lstlisting}[caption = Metarace.build.cs file, label={alg:build}]
 using UnrealBuildTool;
 
 public class Metarace : ModuleRules
@@ -224,7 +228,7 @@ public:
 
     Inoltre tutto lo spazio di eventi viene inserito in un apposito namespace in modo da non dover ricordare il valore numerico associato all'evento:
 
-    \begin{lstlisting}[caption = Namespace in cui vengono definiti i le keys per la mappa degli eventi]
+    \begin{lstlisting}[caption = Namespace in cui vengono definite le keys]
 namespace Events
 {
     static constexpr int32 GMetaraceConnected_Event = 0;
@@ -244,7 +248,7 @@ namespace Events
 
     Infine la funzione per popolare la mappa degli eventi:
 
-    \begin{lstlisting}[caption = Funzione Inizialize nel NetworkActor]
+    \begin{lstlisting}[caption = Funzione Initialize nel NetworkActor]
 void AMetaraceNetworkActor::Initialize()
 {	
 	observeEvent(Events::GAvailableRaceFormats_Event, CALLBACK(&AMetaraceNetworkActor::OnAvailableRacesFormatsEvent));
@@ -263,7 +267,7 @@ void AMetaraceNetworkActor::Initialize()
 
         \subsubsection{PlayEvent e AvailableRacesFormatsEvent}
 
-        \begin{figure}[b]\label{img:RacesFormats}
+        \begin{figure}[t]\label{img:RacesFormats}
             \centering
             \includegraphics[width=14.5cm]{figure/RacesFormats.png}
             \caption{Diagramma di sequenza per gli eventi GetAvailableRacesEvent e OnAvailableRacesFormatsEvent}
@@ -323,17 +327,18 @@ void AMetaraceNetworkActor::OnAvailableRacesFormatsEvent(AMetaraceNetworkActor* 
 
         \subsubsection{JoinEvent e PlayerJoinedEvent}
 
-        L'evento \textit{JoinEvent} viene innescato quando un giocatore preme su un bottone corrispettivo ad una specifica tipologia di gara.
-        %
-        Similmente a come accade con il bottone \textit{Start} (Algoritmo: \ref{alg:StartWidget}), l'esecuzione del delegate permette di inviare al server un messaggio rappresentante la gara scelta.
-        %
-        Il formato del file Json in questione è descritto nella Figura: \ref{img:JoinEvent}.
-
         \begin{figure}[b]\label{img:JoinEvent}
             \centering
             \includegraphics[width=13cm]{figure/JoinEvent.png}
             \caption{Diagramma di sequenza per gli eventi JoinEvent e PlayerJoinedEvent}
         \end{figure}
+
+        L'evento \textit{JoinEvent} viene innescato quando un giocatore preme su un bottone corrispettivo ad una specifica tipologia di gara.
+        %
+        Similmente a come accade con il bottone \textit{Start} (Algoritmo: \ref{alg:StartWidget}), l'esecuzione del delegate permette di inviare al server un messaggio rappresentante la gara scelta.
+        %
+        Il formato del file Json in questione è descritto nella Figura: \ref{img:JoinEvent}.
+        
 
         Il server alla ricezione del messaggio inserisce il giocatore in questione nella gara scelta e invia un messaggio di conferma avvenuta connessione alla gara: questo è l'evento \textit{PlayerJoinedEvent}.
         %
@@ -422,7 +427,7 @@ void AMetaraceSceneController::StartingGrid(
 
         \subsubsection{CountdownEvent e RaceEvent}
 
-        \begin{figure}[t]\label{img:CountdownEvent}
+        \begin{figure}[!ht]\label{img:CountdownEvent}
             \centering
             \includegraphics[width=11cm]{figure/CountdownEvent.png}
             \caption{Diagramma di sequenza per gli eventi CountdownEvent e RaceEvent}
@@ -436,7 +441,7 @@ void AMetaraceSceneController::StartingGrid(
         %
         Il file Json associato a questo evento, come si vede nella Figura \ref{img:CountdownEvent}, porta con se solo la durata del timer rimanente per l'inizio della gara.
         %
-        In Unreal Engine ci sono degli oggetti appositamente creati per la gestione dei conti alla rovescia, i \textit{FTimerHandle}.
+        In Unreal Engine ci sono degli oggetti appositamente creati per la gestione del conto alla rovescia, i \textit{FTimerHandle}.
         %
         I timer in Unreal Engine permettono di definire una funzione da chiamare allo scadere del tempo impostato.
         %

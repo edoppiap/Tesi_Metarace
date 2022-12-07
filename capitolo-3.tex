@@ -47,7 +47,7 @@ Infatti l'architettura di Metarace può essere divisa in vari strati che si occu
     %
     Un importante tipo di responsabilità di fare è quella del pattern \textit{Creator}.
     %
-    La maggiorparte delle responsabilità di questo tipo sono state assegnate all'oggetto \textit{Application Manager}.  
+    La maggior parte delle responsabilità di questo tipo sono state assegnate all'oggetto \textit{Application Manager}.  
     %
     Questo è anche dovuto dal fatto che nel momento in cui il gioco viene fatto partire, un attore deve essere già in scena per poter instanziare tutti gli altri Actor.
     %
@@ -379,6 +379,12 @@ StartMenuWidget->WidgetController = this;
     \end{lstlisting}
 
     È possibile infine mostrare o nascondere il Blueprint desiderato attraverso la libreria \textit{ESplateVisibility} che permette di scegliere tra \textit{Visible}, \textit{Hidden} e altre opzioni.
+
+    \begin{figure}[b]
+        \centering
+        \includegraphics[width=.9\textwidth]{figure/FotoConIlVR.png}
+        \caption{Foto con visore VR durante una partita di Metarace}
+    \end{figure}
 
     Degno di nota è infine lo strumento \textit{UListView} che permette di inserire a tempo di esecuzioni un numero variabile di Widget all'interno di un altro Widget, potendo perciò creare dei Widget a cascata anche a tempo di esecuzione.
     %
