@@ -150,7 +150,7 @@ E solo a questo punto si può connettere la WebSocket al server tramite la funzi
 
 La funzione che legge il file \textit{Json} e che cerca nella \textit{TMap} la funzione corrispondente cerca all'interno del file un campo "event" dove viene specificato l'intero corrispondente al value della funzione del client che il server vuole raggiungere:
 
-\begin{lstlisting}[caption = funzione che gestisce la ricezione del messaggio in ABaseNetworkActor]
+\begin{lstlisting}[caption = funzione che gestisce la ricezione del messaggio in ABaseNetworkActor, label = {alg:OnMessageReceived}]
 void ABaseNetworkActor::OnMessageReceived(const TSharedPtr<FJsonObject>& Message)
 {
     if (Message.IsValid())
@@ -168,7 +168,7 @@ void ABaseNetworkActor::OnMessageReceived(const TSharedPtr<FJsonObject>& Message
 
 Infine, la funzione per inviare dati al server è definita come segue:
 
-\begin{lstlisting}[caption = Funzione per inviare dati al server attraverso la WebSocket]
+\begin{lstlisting}[caption = Funzione per inviare dati al server attraverso la WebSocket, label = {alg:SendMessage}]
 void ABaseNetworkActor::SendMessage(const FString& Message) const
 {
     if (MSocket->IsConnected())
@@ -222,54 +222,306 @@ public:
 }
 \end{lstlisting}
 
-    %
+    Inoltre tutto lo spazio di eventi viene inserito in un apposito namespace in modo da non dover ricordare il valore numerico associato all'evento:
+
+    \begin{lstlisting}[caption = Namespace in cui vengono definiti i le keys per la mappa degli eventi]
+namespace Events
+{
+    static constexpr int32 GMetaraceConnected_Event = 0;
+    static constexpr int32 GMetaraceLogin_Event = 1;
+    static constexpr int32 GPlay_Event = 2;
+    static constexpr int32 GAvailableRaceFormats_Event = 3;
+    static constexpr int32 GJoin_Event = 4;
+    static constexpr int32 GPlayerJoined_Event = 5;
+    static constexpr int32 GStartingGrid_Event = 6;
+    static constexpr int32 GAnotherPlayerJoined_Event = 7;
+    static constexpr int32 GCountDown_Event = 8;
+    static constexpr int32 GRace_Event = 9;
+    static constexpr int32 GRaceFinishedEvent = 10;	
+    static constexpr int32 GLeaderboard_Event = 11;
+}
+    \end{lstlisting}
+
+    Infine la funzione per popolare la mappa degli eventi:
+
+    \begin{lstlisting}[caption = Funzione Inizialize nel NetworkActor]
+void AMetaraceNetworkActor::Initialize()
+{	
+	observeEvent(Events::GAvailableRaceFormats_Event, CALLBACK(&AMetaraceNetworkActor::OnAvailableRacesFormatsEvent));
+	observeEvent(Events::GPlayerJoined_Event, CALLBACK(&AMetaraceNetworkActor::OnPlayerJoinedEvent));
+	observeEvent(Events::GAnotherPlayerJoined_Event, CALLBACK(&AMetaraceNetworkActor::OnAnotherPlayerJoinedEvent));
+	observeEvent(Events::GStartingGrid_Event, CALLBACK(&AMetaraceNetworkActor::OnStartingGridEvent));
+	observeEvent(Events::GCountDown_Event, CALLBACK(&AMetaraceNetworkActor::OnCountdownEvent));
+	observeEvent(Events::GRace_Event, CALLBACK(&AMetaraceNetworkActor::OnRaceEvent));
+	observeEvent(Events::GLeaderboard_Event, CALLBACK(&AMetaraceNetworkActor::OnLeaderboardEvent));
+}
+    \end{lstlisting}
+
+    \section{Programmazione ad Eventi (EDP)}
+    
     Verranno discussi nel dettaglio tutti gli eventi che sono stati implementati.
 
         \subsubsection{PlayEvent e AvailableRacesFormatsEvent}
-        L'evento \textit{PlayEvent} viene innescato quando il giocatore preme il pulsante \textit{Start}.
-        %
-        Il client a questo punto invia al server il messaggio relativo all'intenzione del giocatore di voler iniziare una partita. 
 
-        \begin{figure}[!ht]
+        \begin{figure}[b]\label{img:RacesFormats}
             \centering
             \includegraphics[width=14.5cm]{figure/RacesFormats.png}
             \caption{Diagramma di sequenza per gli eventi GetAvailableRacesEvent e OnAvailableRacesFormatsEvent}
             \label{img:PlayEvent}
         \end{figure}
 
+        L'evento \textit{PlayEvent} viene innescato quando il giocatore preme il pulsante \textit{Start}, come visto in Algoritmo: \ref{alg:StartWidget}.
+        %
+        Il delegate in questione è legato alla funzione vista in Algoritmo: \ref{alg:SendMessage}.
+        %
+        Tramite l'esecuzione del delegate, il client invia al server il messaggio relativo all'intenzione del giocatore di voler iniziare una partita.
+        %
+        Il server invia in risposta un messaggio verso il client con tutte le tipologie di gare a cui è possibile accedere in quel momento.
+
+        Il Json in arrivo dal server, come si vede nel diagramma di sequenza nella Figura: \ref{img:RacesFormats}, avrà come NumberField("event") il valore 3.
+        %
+        Questo valore permette di trovare nella mappa degli eventi con la funzione vista in Algoritmo:\ref{alg:OnMessageReceived} la funzione \textit{OnAvailabelRaceFormatsEvent}.
+
+        \begin{lstlisting}[caption = Funzione OnAvailabelRaceFormatsEvent, label = {alg:OnAvailabelRaceFormatsEvent}]
+void AMetaraceNetworkActor::OnAvailableRacesFormatsEvent(AMetaraceNetworkActor* NetworkActor, const FJsonObject& JsonObject)
+{
+    UAvailableRacesFormatsEventDTO* Dto = 
+        NewObject<UAvailableRacesFormatsEventDTO>();
+    Dto->AddToRoot();
+
+    const TArray<TSharedPtr<FJsonValue>> AvailableFormatsJson = 
+        JsonObject.GetArrayField("availableFormats");
+    for(auto Format : AvailableFormatsJson)
+    {
+        URaceFormatObject* RaceFormat = 
+            NewObject<URaceFormatObject>();
+        RaceFormat->Id = Format.Get()->AsObject()
+            .Get()->GetStringField("formatId");
+        RaceFormat->Length = Format.Get()->AsObject()
+            .Get()->GetStringField("length");
+        RaceFormat->Cost = Format.Get()->AsObject()
+            .Get()->GetStringField("cost");
+        RaceFormat->Prize = Format.Get()->AsObject()
+            .Get()->GetStringField("prize");
+        Dto->Formats.Add(RaceFormat);		
+    }
+
+    if(NetworkActor && NetworkActor->OnAvailableRacesFormatsEventDelegate.IsBound())
+    {
+        NetworkActor->OnAvailableRacesFormatsEventDelegate.Execute(Dto);
+    }
+}
+        \end{lstlisting}
+
+        Come si vede in Algoritmo: \ref{alg:OnAvailabelRaceFormatsEvent} il file Json viene spacchettato e salvato dentro un oggetto DTO.
+        %
+        Il delegate relativo a questo evento viene quindi eseguito passando l'oggetto DTO appena creato.
+        %
+        Il delegate, come visto nella funzione \textit{Begin Play} dell'\textit{ApplicationManager} (Algoritmo: \ref{alg:bindDelegate}), è legato alla funzione \textit{ShowAvailableRacesFormats} implementata nello \textit{SceneController}.
+        %
+        Questa funzione a sua volta passa gli oggetti rappresentati i formati della gara al \textit{WidgetController} che si occuperà di farli visualizzare al giocatore sotto forma di bottoni per poter scegliere a quale gara partecipare.
+
         \subsubsection{JoinEvent e PlayerJoinedEvent}
 
-        \begin{figure}[!ht]
+        L'evento \textit{JoinEvent} viene innescato quando un giocatore preme su un bottone corrispettivo ad una specifica tipologia di gara.
+        %
+        Similmente a come accade con il bottone \textit{Start} (Algoritmo: \ref{alg:StartWidget}), l'esecuzione del delegate permette di inviare al server un messaggio rappresentante la gara scelta.
+        %
+        Il formato del file Json in questione è descritto nella Figura: \ref{img:JoinEvent}.
+
+        \begin{figure}[b]\label{img:JoinEvent}
             \centering
             \includegraphics[width=13cm]{figure/JoinEvent.png}
             \caption{Diagramma di sequenza per gli eventi JoinEvent e PlayerJoinedEvent}
         \end{figure}
 
+        Il server alla ricezione del messaggio inserisce il giocatore in questione nella gara scelta e invia un messaggio di conferma avvenuta connessione alla gara: questo è l'evento \textit{PlayerJoinedEvent}.
+        %
+        Anche questo evento è mappato dentro lo \textit{SceneController} e permette di passare alla vista di gara.
+
         \subsubsection{StartingGridEvent e AnotherPlayerJoinedEvent}
 
-        \begin{figure}[!ht]
+        \begin{figure}[!ht]\label{img:StartingGrid}
             \centering
             \includegraphics[width=10cm]{figure/StartingGrid.png}
             \caption{Diagramma di sequenza per gli eventi StartingGridEvent e AnotherPlayerJoinedEvent}
         \end{figure}
 
+        Questi due eventi permettono al client di ricevere le informazioni riguardanti la gara alla quale si è connesso.
+        %
+        L'evento \textit{StartingGridEvent} permettere di ricevere le informazioni della griglia di partenza presente al momento della connessione alla gara, quindi arriveranno tutte le informazioni dei cavalli in attesa dell'avvio della gara già presenti sulla griglia.
+        %
+        Il file Json in Figura \ref{img:StartingGrid} è un esempio di griglia di partenza.
+        %
+        L'evento \textit{AnotherPlayerJoinedEvent} permette di ricevere le informazioni dei giocatori che si connetteranno alla gara successivamente.
+        %
+        Ne arriverà uno per ogni giocatore aggiuntivo che si connette.
+        
+        \begin{lstlisting}[caption = Funzione che spacchetta il file Json per la griglia iniziale, label = {alg:StartingGrid}]
+void AMetaraceNetworkActor::OnStartingGridEvent(
+    AMetaraceNetworkActor* NetworkActor, const FJsonObject& JsonObject)
+{
+    UStartingGridEventDTO* Dto = NewObject<UStartingGridEventDTO>();
+    Dto->AddToRoot();
+
+    const TArray<TSharedPtr<FJsonValue>> PlayersArrayJson = 
+        JsonObject.GetArrayField("horses");
+    
+    for(TSharedPtr<FJsonValue> horse : PlayersArrayJson)
+    {		
+        UHorseObject* H = NewObject<UHorseObject>();
+        H->Name = horse.Get()->AsObject().Get()->GetStringField("horseName");
+        H->Id = horse.Get()->AsObject().Get()->GetStringField("horseId");
+        H->MeshReference = horse.Get()->AsObject().Get()->GetNumberField("mesh");
+        H->Position = horse.Get()->AsObject().Get()->GetNumberField("position");
+        
+        Dto->Players.Add(H);
+    }
+
+    if(NetworkActor && 
+        NetworkActor->OnStartingGridEventDelegate.IsBound())
+    {
+        NetworkActor->OnStartingGridEventDelegate.Execute(Dto);
+    }
+}            
+        \end{lstlisting}
+
+        L'esecuzione di questo delegete chiama la funzione dello \textit{SceneController} che si occupa dello spawn dei cavalli (Algoritmo \ref{alg:SpawnHorses}):
+
+        \begin{lstlisting}[caption = Funzione in \textit{SceneController} che fa comparire i cavalli, label={alg:SpawnHorses}]
+void AMetaraceSceneController::StartingGrid(
+    const UStartingGridEventDTO* StartingGridEventDto)
+{
+    UWorld* World = GetWorld();
+    if(!World) { return; }
+    
+    FActorSpawnParameters SpawnParams;
+    if(BP_Horse)
+    {
+        for(UHorseObject* HorseObject : 
+            StartingGridEventDto->Players)
+        {
+            int32 Position = HorseObject->Position;
+            FTransform SpawnTransform = 
+                Splines[Position]->GetTransformAtSplinePoint(
+                    0, ESplineCoordinateSpace::World);
+            AHorse* Horse = World->SpawnActor<AHorse>(
+                BP_Horse, SpawnTransform, SpawnParams);
+            Horse->SetSkeletalMesh(
+                    Int2Mesh[HorseObject->MeshReference]);
+            Horse->SetSplineComponent(Splines[Position]);
+            Horse->Name = HorseObject->Name;
+            Horse->Id = HorseObject->Id;
+                        
+            //I riferimenti ai cavalli vengono tenuti in una TMap
+            Horses.Add(Horse->Id, Horse);
+        }
+    }
+}
+        \end{lstlisting}
+
         \subsubsection{CountdownEvent e RaceEvent}
 
-        \begin{figure}[!ht]
+        \begin{figure}[t]\label{img:CountdownEvent}
             \centering
             \includegraphics[width=11cm]{figure/CountdownEvent.png}
             \caption{Diagramma di sequenza per gli eventi CountdownEvent e RaceEvent}
         \end{figure}
 
+        Il \textit{CountdownEvent} è un evento che parte dal server per sincronizzare tutti i client partecipanti alla gara.
+        %
+        Esso viene lanciato dal server nel momento in cui le condizioni per poter iniziare la partita sono state raggiunte.
+        %
+        Le condizioni sono: il raggiungimento del numero massimo dei partecipanti oppure la scadenza di un conto alla rovescia partito al raggiungimento del numero minimo dei partecipanti.
+        %
+        Il file Json associato a questo evento, come si vede nella Figura \ref{img:CountdownEvent}, porta con se solo la durata del timer rimanente per l'inizio della gara.
+        %
+        In Unreal Engine ci sono degli oggetti appositamente creati per la gestione dei conti alla rovescia, i \textit{FTimerHandle}.
+        %
+        I timer in Unreal Engine permettono di definire una funzione da chiamare allo scadere del tempo impostato.
+        %
+        La funzione dello SceneController chiamata dal delegate di questo evento comunica la durata del countdown al WidgetController - che si occupa di fare il display del conto alla rovescia - e sfrutta un \textit{FTimerHandle} per far partire la gara - con la funzione \textit{StartRace} - allo scadere del tempo comunicato dal server.
+
+        \begin{lstlisting}[caption = Funzione nello SceneController che inizializza un \textit{FTimerHandle}]
+void AMetaraceSceneController::ShowCountDown(
+    const UCountdownEventDTO* CountdownEventDto)
+{	
+	WidgetController->ShowCountdown(
+            CountdownEventDto->CountdownTimestamp);
+	
+	FTimerHandle TimerHandle2;
+	GetWorldTimerManager().SetTimer(TimerHandle2, this, 
+        &AMetaraceSceneController::StartRace, 1.f, false,
+        CountdownEventDto->CountdownTimestamp);
+}
+        \end{lstlisting}
+
+        Il \textit{RaceEvent} è un altro evento che parte dal server e viene lanciato consecutivamente al \textit{CountdownEvent}.
+        %
+        Il file Json associato a questo evento porta tutte le informazioni per lo svolgersi della gara.
+        %
+        Questo è il file che contiene l'insieme degli array dei tempi di cui si è discusso nel Paragrafo \ref{sec:Meccanica}, ossia l'insieme dei tempi con cui il cavallo percorrerà ciascuno step del percorso.
+
+        \begin{lstlisting}[caption = Funzione che spacchetta il file Json relativo ai dati di gara, label = {alg:OnRaceEvent}]
+void AMetaraceNetworkActor::OnRaceEvent(AMetaraceNetworkActor* NetworkActor, 
+    const FJsonObject& JSonObject)
+{
+    URaceEventDTO* Dto = NewObject<URaceEventDTO>();
+    Dto->AddToRoot();
+
+    Dto->NumStep = JSonObject.GetNumberField("step");
+
+    const TArray<TSharedPtr<FJsonValue>> HorsesJson = 
+        JSonObject.GetArrayField("horses");
+    for(TSharedPtr<FJsonValue> Horse : HorsesJson)
+    {
+        UHorseObject* H = NewObject<UHorseObject>();
+        H->Id = Horse.Get()->AsObject()
+            .Get()->GetStringField("horseId");
+        const TArray<TSharedPtr<FJsonValue>> TimeArrayJson = 
+            Horse.Get()->AsObject().Get()->GetArrayField("timeByStep");
+
+        for(auto Time : TimeArrayJson)
+        {
+            H->TimeArray.Add(Time.Get()->AsNumber());
+        }
+        Dto->Horses.Add(H);
+    }
+    
+    if(NetworkActor && NetworkActor->OnRaceEventDelegate.IsBound())
+    {
+        NetworkActor->OnRaceEventDelegate.Execute(Dto);
+    }
+}
+        \end{lstlisting}
+
+        La funzione dello \textit{SceneController} chiamata dal delegate per il RaceEvent in Algoritmo \ref{alg:OnRaceEvent}, si occupa di passare l'array di tempi ai cavalli e di chiamare la funzione \textit{Inizialize} vista in Algoritmo: \ref{alg:HorseInizialize}.
+
+        \begin{lstlisting}[caption = Funzione dello SceneController che inizializza i cavalli]
+void AMetaraceSceneController::InitRace(
+    const URaceEventDTO* StartRaceEventDto)
+{
+	for(auto HorseObject : StartRaceEventDto->Horses)
+	{
+		AHorse* Horse = *Horses.Find(HorseObject->Id);
+		Horse->TimeArray = HorseObject->TimeArray;
+		Horse->Inizialize();
+	}
+}
+        \end{lstlisting}
+
         \subsubsection{RaceFinishedEvent e Leaderboardevent}
 
-        \begin{figure}[!ht]
+        L'evento \textit{RaceFinishedEvent} viene lanciato dallo SceneController stesso.
+        %
+        Infatti, in scena è presente un \textit{ATriggerBox} in corrispondenza del traguardo che al verificarsi dell'\textit{OverlapEvent} (ossia quando i cavalli raggiungono il traguardo) chiama la funzione che genera e invia il file Json relativo a questo evento.
+        %
+        L'obiettivo di questo evento è quella di far sapere al server che il client ha fatto visualizzare l'intera gara e che aspetta i dati per fare il display della \textit{Leaderboard}.
+        %
+        Questo è il motivo per cui anche lo SceneController ha un delegate legato alla funzione \textit{SendMessage} del NetworkActor, Algoritmo \ref{alg:SendMessage}.
+
+        \begin{figure}[t]
             \centering
             \includegraphics[width=12cm]{figure/RaceFinishedEvent.png}
             \caption{Diagramma di sequenza per gli eventi RaceFinishedEvent e LeaderboardEvent}
         \end{figure}
-
-
-\section{Scelte di progetto guidate dalla flessibilità}
-
-\section{Programmazione ad Eventi (EDP)}

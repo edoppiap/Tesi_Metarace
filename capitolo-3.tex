@@ -124,8 +124,7 @@ void AMetaraceApplicationManager::BeginPlay()
 
     L'ApplicationManager si occupa anche di creare i Bind per tutti i delegate visto che già ha i riferimenti a tutti gli oggetti che li utilizzano.
 
-    \label{alg:bindDelegate}
-    \begin{lstlisting}[firstnumber=22, caption = Sezione del file source dell'Application Manager dove viene formato il Bind dei delegates]
+    \begin{lstlisting}[firstnumber=22, caption = Sezione del file source dell'Application Manager dove viene formato il Bind dei delegates, label = {alg:bindDelegate}]
 
     if(SceneController && NetworkActor)
     {
@@ -182,6 +181,12 @@ void AMetaraceApplicationManager::BeginPlay()
     Lo SceneController crea l'istanza del WidgetController in base alla presenza o meno del VR connesso al computer.
     %
     Questo può essere controllato grazie alla libreria offerta da Unreal Engine \textit{UHeadMountedDisplayFunctionLibrary}.
+
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[width=12cm]{figure/HorseView2Cropped.png}
+        \caption{Vista dall'inizio del percorso, dopo che lo SceneController ha fatto comparire i cavalli}
+    \end{figure}
 
     \begin{lstlisting}[caption = Sezione del source della classe SceneController dove viene fatto il controllo per sapere se il giocatore indossa un visore]
 void AMetaraceSceneController::BeginPlay()
@@ -288,7 +293,8 @@ public:
 
     Nella funzione OnStartClicked viene mostrato l'esecuzione del delegate che si occupa di inviare il file Json al server. 
 
-    \begin{lstlisting}[ caption = File source classe StartMenuWidget ]
+    
+    \begin{lstlisting}[ caption = {File source classe StartMenuWidget}, label= {alg:StartWidget} ]
 #include ...
 
 void UStartMenuWidget::NativeConstruct()
@@ -421,7 +427,7 @@ void AMetaraceCameraController::UpdateCameraPositionOnSpline(float TimelineValue
     %
     Gli oggetti \textit{ATriggerBox} permettono di impostare degli eventi \textit{Overlap} che permettono di cambiare camera quando i cavalli raggiungo un punto lungo il percorso.
 
-    \begin{lstlisting}[caption = Chiamata per l'aggiunta di una funzione all'evento overlap di un \textit{TriggerBox}]
+    \begin{lstlisting}[caption = {Chiamata per l'aggiunta di una funzione all'evento overlap di un \textit{TriggerBox}}]
 StartRaceTriggerBox->OnActorEndOverlap.AddDynamic(this, 
     &AMetaraceCameraController::OnStartTriggerExit);
     \end{lstlisting}
@@ -441,7 +447,7 @@ void AMetaraceCameraController::OnStartTriggerExit(AActor* This, AActor* Other)
 
     \subsection{Il \textit{VRController}}
 
-    La classe \textit{VRController} si occupa di implementare le chiamate dello \textit{SceneController} quando il giocatore ha eseguito l'accesso al gioco tramite un visore per la realtò virtuale.
+    La classe \textit{VRController} si occupa di implementare le chiamate dello \textit{SceneController} quando il giocatore ha eseguito l'accesso al gioco tramite un visore per la realtà virtuale.
 
     \begin{figure}[!ht]
         \centering
@@ -467,7 +473,8 @@ void AVRMetaraceController::NextPosition()
     {
         if(Player)
         {
-            Player->TeleportTo(PlayerPositions[temp]->GetActorLocation(),
+            Player->TeleportTo(
+                PlayerPositions[temp]->GetActorLocation(),
                 PlayerPositions[temp]->GetActorRotation());
             CurrentPosition = temp;
         }
