@@ -59,3 +59,21 @@ Come si evince dalle Figure~\ref{fig:figura-doppia}.a e~\ref{fig:figura-doppia}.
             \item Nello scenario iniziale non c'è una telecamera che segue la scena ne un'interfaccia utente
             \item Il gioco viene eseguito come una simulazione che non richiede alcun input dell'utente
         \end{itemize}
+
+        \begin{lstlisting}[ caption = Sezione del file header della classe SceneController dove vengono istanziate tutte le funzioni associate ai delegate del NetworkActor]
+            UCLASS()
+            class Metarace AMetaraceSceneController : public AActor
+            {
+                GENERATED_BODY()
+            public:
+                void PlayerJoined(const UPlayerJoinedEventDTO* PlayerJoinedEventDto);
+                void StartingGrid(const UStartingGridEventDTO* StartingGridEventDto);
+                void InitRace(const URaceEventDTO* StartRaceEventDto);
+                void StartRace();
+                void ShowAvailableRaceFormats(const UAvailableRacesFormatsEventDTO* AvailableRacesFormatsEventDto);
+                void AnotherPlayerJoined(const UAnotherPlayerJoinedEventDTO* AnotherPlayerJoinedEventDto);
+                void ShowCountDown(const UCountdownEventDTO* CountdownEventDto);
+                void SendEndRace();
+                void OnLeaderboardEvent(const ULeaderboardEventDTO* LeaderboardEventDto);
+            }
+                \end{lstlisting}

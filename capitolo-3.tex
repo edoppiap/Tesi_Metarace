@@ -171,287 +171,323 @@ void AMetaraceApplicationManager::BeginPlay()
 
     \subsection{Lo \textit{SceneController}}
 
-    Lo \textit{SceneController} è la classe che si interfaccia con lo strato di Logica Implementativa e con lo strato dell'Interfaccia Utente.
+    Lo \textit{SceneController} è la classe implementata per permettere di interfacciarsi con lo strato di Logica Implementativa e con lo strato dell'Interfaccia Utente.
     %
-    A questa classe sono state assegnate le responsabilità di conosce gli oggetti più importanti nel livello di gioco: conosce il percorso di gara e fa comparire i cavalli dei giocatori inizializzando i loro dati.
+    A questa classe sono state assegnate le responsabilità di conoscere gli oggetti più importanti del livello di gioco: il percorso di gara e i cavalli. 
+    %
+    Infatti, si occupa dello \textit{spawn} dei cavalli dei giocatori e del settaggio delle loro variabili.
     %
     Inoltre si occupa della creazione delle classi WidgetController, CameraController e VRController.
+    %
+    Lo SceneController crea l'istanza del WidgetController in base alla presenza o meno del VR connesso al computer.
+    %
+    Questo può essere controllato grazie alla libreria offerta da Unreal Engine \textit{UHeadMountedDisplayFunctionLibrary}.
 
-\section{Architettura Client - Server e la WebSocket}
-
-Metarace è quindi un applicativo con struttura client-server e si collega al server con un canale di comunicazione bidirezionale basato sul protocollo WebSocket.
-%
-Questo protocollo è stato scelto per due motivi: il primo è che permette di tenere aperta una connessione tra client e server fino a che non viene terminata da uno dei due partecipanti; il secondo è che non è necessario definire il protocollo di comunicazione dato che si basa sul diffuso protocollo TCP.
-
-Questo protocollo trasferisce i dati su una connessione full-duplex su singolo socket e permette l'invio e la ricezione di messaggi da parte di ambedue gli endpoint. 
-%
-Una connessione WebSocket è instaurata con un handshake specifico basato sul protocollo HTTP.
-%
-A seguito di questo handshake il protocollo di comunicazione cambia, e passa da HTTP a WebSocket tramite la connessione TCP utilizzata inizialmente. 
-
-Unreal Engine fornisce supporto per l'utilizzo dei WebSocket tramite il modulo \textit{IWebSocket} \cite{UWebSocket}. Per poter utilizzare questo modulo bisogna aggiungere la dependency all'interno del file ".build.cs". Qui è mostrato il codice con l'aggiunta di tutte le dependencies utilizzate nel progetto:
-
-\begin{lstlisting}[caption = Metarace.build.cs file]
-using UnrealBuildTool;
-
-public class Metarace : ModuleRules
+    \begin{lstlisting}[caption = Sezione del source della classe SceneController dove viene fatto il controllo per sapere se il giocatore indossa un visore]
+void AMetaraceSceneController::BeginPlay()
 {
-	public Metarace(ReadOnlyTargetRules Target) : base(Target)
+    Super::BeginPlay();
+    UWorld* World = GetWorld();
+    if(!World) { return; }
+
+    IsInVR = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
+
+    if(IsInVR)
 	{
-		PublicDependencyModuleNames.AddRange(new[]
-			{ "Core", "CoreUObject", "Engine", 
-            "InputCore", "WebSockets", "Json", 
-            "UMG", "HeadMountedDisplay", "CinematicCamera", 
-            "Niagara" });
-	}
-}
-\end{lstlisting}
-
-La WebSocket viene creata all'interno di una classe astratta, chiamata \textit{BaseNetworkActor}.
-%
-Il motivo di questa scelta deriva dal fatto che Metarace non è l'unico applicativo dell'universo dell'azienda Ringmaster.
-%
-Con questa struttura è infatti possibile creare implementazioni diverse per ogni applicativo senza dover cambiare ogni volta il tipo di classe utilizzato.
-%
-Una classe astratta non viene instanziata ma viene ereditata da sottoclassi che ne implementano o ne sovrascrivono i metodi.
-%
-La scelta di una classe astratta invece di una interfaccia è dovuta dal fatto che ci sono implementazioni che devono essere uguali tra tutte le sottoclassi (l'intaurazione e il rilascio della connessione ad esempio).
-
-Qui viene mostrato il codice di questa classe:
-
-\begin{lstlisting}[caption = Sezione del file header di BaseNetworkActor dove vengono importati i moduli necessari alla WebSocket e viene definita la mappa degli eventi]
-#include "WebSocketsModule.h" // Module definition
-#include "IWebSocket.h"       // Socket definition
-
-UCLASS()
-class Metarace ABaseNetworkActor : public AActor
-{
-    GENERATED_BODY()
-protected:
-    TMap<int32, std::function<void(ABaseNetworkActor*, FJsonObject)>> 
-        mEventMap;
-\end{lstlisting}
-
-Viene definita una \textit{TMap} per mappare tutte le funzioni che gestiscono gli eventi ricevuti dal server.
-%
-Questa mappa ha come key degli interi e come value delle funzioni di sola lettura, definite \textit{const}, che prendono come parametro un riferimento ad un'istanza della classe BaseNetworkActor o di una sua sottoclasse e un \textit{JsonObject}.
-%
-La comunicazione si baserà su messaggi di tipo Json, in Unreal Engine esistono gli oggetti di tipo JsonObject e definiti come \textit{FJsonObject}.
-%
-La mappa è un campo protetto perciò è stata implementata una funzione che esegue il \textit{put}, definita come segue:
-
-\begin{lstlisting}[firstnumber=11, caption = Sezione del file header di BaseNetworkActor dove viene definita la funzione che esegue il put nella mappa degli eventi]
-public:
-    virtual void observeEvent(const int32 EventType,
-        const std::function<void(ABaseNetworlActor*, 
-        const FJsonObject&)>& iCallback);
-    [...]  
-}
-\end{lstlisting}
-
-Per creare la WebSocket chiamo la funzione \textit{CreateWebSocket} dal modulo:
-
-\begin{lstlisting}[caption = Sezione del file source di ABaseNetworkActor dove viene creata la WebSocket]
-void ABaseNetworkActor::Connect(const FString& Enpoint)
-{
-    const FString& WebsocketEndpoint = Endpoint;
-    const FString& Protocol = TEXT("json");
-
-	MSocket = FWebSocketsModule::Get().CreateWebSocket(WebsocketEndpoint, Protocol);
-\end{lstlisting}
-
-%
-%
-Definisco quindi tramite delle \textit{Lambda} gli eventi: \textit{OnConnected}, \textit{OnMessage}, \textit{OnClosed} e \textit{OnConnectionError}.
-
-\begin{lstlisting}[firstnumber=7]
-    MSocket->OnConnected().AddLambda(
-		[=]() -> void
+		if(BP_VRController)
 		{
-			OnSocketConnected();
+			VRController = World->SpawnActor<AVRMetaraceController>(BP_VRController, GetTransform(), SpawnParams);
 		}
-	);
-\end{lstlisting}
-
-Il file \textit{Json} arriva sotto forma di stringa, perciò va inizializzato un \textit{TJsonReader} che la legge come file \textit{Json} e permette quindi di trasformarlo in un \textit{FJsonObject}.
-%
-Si noti che in queste implementazioni viene fatto uso di un oggetto della libreria \textit{Unreal Smart Pointer Library}, il puntatore smart \textit{TSharedPtr}.
-%
-Questa libreria è un'implementazione di Unreal in C++11 degli \textit{Smart Pointer} ideata per alleggerire il peso dell'allocazione e del tracciamento della memoria \cite{USmartPointerLibrary}.
-%
-Uno \textit{Shared Pointer} possiede l'oggetto a cui fa riferimento e gestisce la cancellazione dello stesso impedendola indefinitivamente oppure cancellandolo quando nessun puntatore vi fa più riferimento.
-
-\begin{lstlisting}[firstnumber=13, caption=La funzione che gestisce i messaggi in entrata alla WebSocket]
-	MSocket->OnMessage().AddLambda(
-		[=](const FString& iMessage) -> void
+		if(BP_VRWidgetController)
 		{
-			const TSharedRef<TJsonReader<>> JSONReader = TJsonReaderFactory<>::Create(iMessage);
-
-			if (TSharedPtr<FJsonObject> JSONObject; FJsonSerializer::Deserialize(JSONReader, JSONObject))
-			{
-				OnMessageReceived(JSONObject);
-			}
+			WidgetController = World->SpawnActor<AMetaraceVRWidgetController>(
+				BP_VRWidgetController, GetTransform(), SpawnParams);
 		}
-	);
-\end{lstlisting}
-
-Seguono quindi le \textit{Lambda Function} per la gestione degli eventi rimanenti:
-
-\begin{lstlisting}[firstnumber=24, caption=Lambda function per la gestione della chiusura della connessione e dell'errore durante la connessione]
-	MSocket->OnClosed().AddLambda(
-		[=](int32 iStatusCode, const FString& iReason, bool iWasClean) -> void
-		{
-			UE_LOG(LogTemp, Display, TEXT("AHackathonBaseNetworkActor::BeginPlay::OnClosed message = %d %s %d"),
-			       iStatusCode, *iReason, iWasClean);
-		}
-	);
-	MSocket->OnConnectionError().AddLambda(
-		[=](const FString& iError) -> void
-		{
-			UE_LOG(LogTemp, Display, TEXT("AHackathonBaseNetworkActor::BeginPlay::OnConnectionError error = %s"),
-			       *iError);
-		}
-	);
-\end{lstlisting}
-
-E solo a questo punto si può connettere la WebSocket al server tramite la funzione \textit{Connect}. 
-\begin{lstlisting}[firstnumber=38, caption = Connessione della WebSocket]
-	MSocket->Connect();
-}
-\end{lstlisting}
-
-La funzione che legge il file \textit{Json} e che cerca nella \textit{TMap} la funzione corrispondente cerca all'interno del file un campo "event" dove viene specificato l'intero corrispondente al value della funzione del client che il server vuole raggiungere:
-
-\begin{lstlisting}[caption = funzione che gestisce la ricezione del messaggio in ABaseNetworkActor]
-void ABaseNetworkActor::OnMessageReceived(const TSharedPtr<FJsonObject>& Message)
-{
-    if (Message.IsValid())
+    }else
     {
-        const FJsonObject& JSONObject = *(Message.Get());
-        if (const int32 EventType = 
-                JSONObject.GetIntegerField("event"); 
-                mEventMap.Contains(EventType))
-        {
-            mEventMap[EventType](this, JSONObject);
-        }
+        if(BP_CameraController)
+		{
+			CameraController = World->SpawnActor<AMetaraceCameraController>(
+				BP_CameraController, GetTransform(), SpawnParams);
+		}
+		if(BP_3DWidgetController)
+		{
+			WidgetController = World->SpawnActor<AMetaraceWidgetController>(
+				BP_3DWidgetController, GetTransform(), SpawnParams);
+		}
     }
-}    
-\end{lstlisting}
-
-Infine, la funzione per inviare dati al server è definita come segue:
-
-\begin{lstlisting}[caption = Funzione per inviare dati al server attraverso la WebSocket]
-void ABaseNetworkActor::SendMessage(const FString& Message) const
-{
-    if (MSocket->IsConnected())
-    {
-        MSocket->Send(Message);
-    }
-}
-\end{lstlisting}
-
-    \subsection{Implementazione MetaraceNetworkActor}
-
-    Dopo aver definito la classe astratta per la creazione e gestione della \textit{WebSocket} si passa a definire la sottoclasse che ne eredita le funzionalità: la classe \textit{MetaraceNetworkActor}.
-
-    Questa classe si occupa di mappare i messaggi che arrivano dal server.
-    %
-
-    I delegates visti in precedenza (in \ref{alg:bindDelegate}) corrispondono a tutti gli eventi che \textit{MetaraceNetworkActor} deve gestire, vengono definiti nel file header nel modo che segue (in \ref{alg:instDelegate}). 
-    %
-    Per ogni messaggio in ingresso è stato inoltre creato un oggetto DTO per ospitare i dati contenuti nel Json dell'evento in questione, ed è proprio di questo tipo l'oggetto che il delegate passerà quando verrà eseguito:
-
-\label{alg:instDelegate}
-\begin{lstlisting}[caption = Dichiarazione delegate nel file header di MetaraceNetworkActor]
-#include ...
-
-DECLARE_DELEGATE_OneParam(FOnAvailableRacesFormatsEvent, const UAvailableRacesFormatsEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnPlayerJoinedEvent, const UPlayerJoinedEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnStartingGridEvent, const UStartingGridEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnAnotherPlayerJoinedEvent, const UAnotherPlayerJoinedEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnCountdownEvent, const UCountdownEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnRaceEvent, const URaceEventDTO*);
-DECLARE_DELEGATE_OneParam(FOnLeaderboardEvent, const ULeaderboardEventDTO*);
-
-UCLASS()
-class Metarace AMetaraceNetworkActor : public ABaseNetworkActor
-{
-    GENERATED_BODY()
-
-public:
-    FOnLoginRequiredEvent OnLoginRequiredEventDelegate;
-    FOnMetaraceConnectedEvent OnMetaraceConnectedEventDelegate;
-    FOnAvailableRacesFormatsEvent 
-        OnAvailableRacesFormatsEventDelegate;
-    FOnPlayerJoinedEvent OnPlayerJoinedEventDelegate;
-    FOnStartingGridEvent OnStartingGridEventDelegate;
-    FOnAnotherPlayerJoinedEvent OnAnotherPlayerJoinedEventDelegate;
-    FOnCountdownEvent OnCountdownEventDelegate;
-    FOnRaceEvent OnRaceEventDelegate;
-    FOnLeaderboardEvent OnLeaderboardEventDelegate;
-
     [...]
-}
-\end{lstlisting}
+}        
+    \end{lstlisting}
 
-    Alcuni eventi vengono innescati quando l'utente interagisce la classe di oggetti chiamata Widget.
+    Lo SceneController implementa tutte le funzioni che sono collegate con i delegate del NetworkActor.
+
+    \subsection{Il \textit{WidgetController}}
+
+    Il \textit{WidgetController} è la classe implementata per permettere di gestore la creazione, l'interazione e la visualizzazione dei Widget.
     %
-    I Widget, che per motivi di spazio non sono strati inseriti nel modello di dominio, sono delle strutture offerte da Unreal Engine con cui è possibile creare e far comparire l'Interfaccia Utente.
+    I Widget sono delle strutture offerte da Unreal Engine con cui è possibile creare e far comparire l'Interfaccia Utente.
     %
     Questi oggetti sono il punto di accesso al sistema offerto al giocatore.
     %
-    I Widget verranno discussi nel dettaglio successivamente.
+    Infatti, permettono di mostrare testi e pulsanti (più in generale interfacce UI) con cui il giocatore può interagire.
+
+    La classe WidgetController è astratta perché esistono due implementazioni in base a se il giocatore è in VR oppure no. 
     %
-    Verranno discussi nel dettaglio tutti gli eventi che sono stati implementati.
+    Infatti i Widget hanno un comportamento molto diverso nei due casi.
+    %
+    Se il giocatore non indossa un visore VR i widget saranno soltanto degli oggetti 2D che verranno mostrati a schermo.
+    %
+    Se invece il giocatore indossa un visore VR i widget dovranno essere istanziati come oggetti 3D nel mondo di gioco.
+    %
+    In entrambi i casi le funzionalità dei singoli widget dovranno essere mantenute.
 
-        \subsubsection{PlayEvent e AvailableRacesFormatsEvent}
-        L'evento \textit{PlayEvent} viene innescato quando il giocatore preme il pulsante \textit{Start}.
-        %
-        Il client a questo punto invia al server il messaggio relativo all'intenzione del giocatore di voler iniziare una partita. 
+    Ho creato i Widget partendo dalla classe C++.
+    %
+    Infatti può essere istanziato sulla base di una classe che estende la classe di Unreal Engine \textit{UUserWidget}.
+    %
+    Sulla base di questa classe va creato un Blueprint di tipo Widget (un particolare tipo di Blueprint) in cui inserire la classe come istanza di Widget. 
+    %
+    È possibile definire degli elementi del Widget (testuali o interagibili come dei bottoni) all'interno del codice e collegarli con le variabili nell'istanza Blueprint con lo specificatore UPROPERTY con l'opzione \textit{meta = (BindWidget)}.
+    %
+    Questa specificazione crea un bind automatico con la variabile all'interno del Bluprint ma quest'ultima deve avere necessariamente lo stesso nome della corrispettiva nello script (in questo caso \textit{StartButton}).
+    %
+    È mostrato il codice relativo alla classe che implementa il Widget per il pulsante \textit{Start}, chiamata \textit{StartMenuWidget}:
 
-        \begin{figure}[!ht]
-            \centering
-            \includegraphics[width=14.5cm]{figure/RacesFormats.png}
-            \caption{Diagramma di sequenza per gli eventi GetAvailableRacesEvent e OnAvailableRacesFormatsEvent}
-            \label{img:PlayEvent}
-        \end{figure}
+    \begin{lstlisting}[caption = File header della classe StartMenuWidget]
+#include ...
 
-        \subsubsection{JoinEvent e PlayerJoinedEvent}
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateOnClickStartRaceEventUI , bool, toShow);
 
-        \begin{figure}[!ht]
-            \centering
-            \includegraphics[width=13cm]{figure/JoinEvent.png}
-            \caption{Diagramma di sequenza per gli eventi JoinEvent e PlayerJoinedEvent}
-        \end{figure}
+UCLASS()
+class Metarace UStartMenuWidget : public UUserWidget
+{
+	GENERATED_BODY()
+	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	class UButton* StartButton;
 
-        \subsubsection{StartingGridEvent e AnotherPlayerJoinedEvent}
+	UPROPERTY()
+	class AMetaraceBaseWidgetController* WidgetController = nullptr;
 
-        \begin{figure}[!ht]
-            \centering
-            \includegraphics[width=10cm]{figure/StartingGrid.png}
-            \caption{Diagramma di sequenza per gli eventi StartingGridEvent e AnotherPlayerJoinedEvent}
-        \end{figure}
+	virtual void NativeConstruct() override;
 
-        \subsubsection{CountdownEvent e RaceEvent}
+	UFUNCTION()
+	void onStartClicked();
 
-        \begin{figure}[!ht]
-            \centering
-            \includegraphics[width=11cm]{figure/CountdownEvent.png}
-            \caption{Diagramma di sequenza per gli eventi CountdownEvent e RaceEvent}
-        \end{figure}
+	FDelegateOnClickStartRaceEventUI Delegate_OnClickStartRaceEventUI;
+	
+};
+    \end{lstlisting}
 
-        \subsubsection{RaceFinishedEvent e Leaderboardevent}
+    Per definire la funzione da chiamare quando un bottone viene premuto dall'utente bisogna fare creare un legame con la funzione scelta (che ho chiamato in questa classe \textit{onStartClicked}).
+    %
+    Questo si può chiamare con la funzione \textit{AddUniqueDymanic} come mostrato di seguito.
+    %
 
-        \begin{figure}[!ht]
-            \centering
-            \includegraphics[width=12cm]{figure/RaceFinishedEvent.png}
-            \caption{Diagramma di sequenza per gli eventi RaceFinishedEvent e LeaderboardEvent}
-        \end{figure}
+    Nella funzione OnStartClicked viene mostrato l'esecuzione del delegate che si occupa di inviare il file Json al server. 
 
+    \begin{lstlisting}[ caption = File source classe StartMenuWidget ]
+#include ...
 
-\section{Scelte di progetto guidate dalla flessibilità}
+void UStartMenuWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
 
-\section{Programmazione ad Eventi (EDP)}
+    StartButton->OnClicked.AddUniqueDynamic(this, 
+        &UStartMenuWidget::onStartClicked);
+}
+
+void UStartMenuWidget::onStartClicked()
+{
+    if(WidgetController && 
+        WidgetController->OnWantToSendMessage.IsBound())
+    {
+        FJsonObject o;
+        o.SetStringField("event", "Play");
+        WidgetController->OnWantToSendMessage.
+            Execute(Utility::JsonToString(o));	
+    }
+}
+    \end{lstlisting}
+
+    La classe \textit{BaseWidgetController} definisce le funzioni seguenti:
+
+    \begin{lstlisting}[caption=File header della classe astratta BaseWidgetController]
+#include ...
+DECLARE_DELEGATE_OneParam(FOnWantToSendMessage, const FString&);
+
+UCLASS()
+class Metarace AMetaraceBaseWidgetController : public AActor
+{
+    GENERATED_BODY()
+    [...] //Constructor, BeginPlay e Tick Function
+public:
+    virtual void ShowStartUI() {};
+    virtual void ShowRaceFormats(TArray<URaceFormatObject*> Formats) {};
+    virtual void RemoveRaceFormats() {};
+    virtual void UpdateTimer() {};
+    virtual void ShowCountdown(int Seconds) {};
+    virtual void ShowRaceWidget() {};
+    virtual void ShowLeaderboard(TArray<ULeaderboardObjectDTO*> LeaderboardLines) {};
+
+    FOnWantToSendMessage OnWantToSendMessage;
+};
+    \end{lstlisting}
+
+    Nel caso in cui il giocatore non stia collegato con un visore si possono far comparire i Widget come delle immagini 2D a schermo.
+    %
+    Ho perciò utilizzato le funzioni seguenti per questo scopo:
+
+    \begin{lstlisting}[caption = Crezione di istanza di Widget con StartMenuWidget come esempio]
+StartMenuWidget = CreateWidget<UStartMenuWidget>(GetWorld(), BP_StartWidget);
+StartMenuWidget->WidgetController = this;
+    \end{lstlisting}
+
+    \begin{lstlisting}[firstnumber=4, caption = Aggiunta di Widget al Viewport]
+StartMenuWidget->AddToViewport(0);
+    \end{lstlisting}
+
+    Mentre nel caso in cui il giocatore stia collegato con un visore per la realtà virtuale i Widget sono stati inseriti come Widget Component all'interno di un Blueprint comune.
+    %
+    In questo modo è possibile renderizzarli come delle immagini all'interno dell'ambiente 3D di gioco, come mostrato in figura \ref{img:WidgetVR}. 
+
+    \begin{figure}[!t]\label{img:WidgetVR}
+        \centering
+        \includegraphics[width=12cm]{figure/StartMenuVRWidget2.png}
+        \caption{Widget renderizzato in 3D per la modalità VR}
+    \end{figure}
+
+    Per questo scopo si utilizzano le funzioni per lo spawn degli Actor e si cerca successivamente il Widget Component al loro interno in modo da ottenere la classe Widget con le funzionalità cercate.
+    %
+    È possibile interagire con il Widget mentre si è in modalità VR puntando il joystick verso il pulstante e premento il tasto corrispondente all'interazione.
+    %
+    Il codice seguente mostra l'utilizzo di queste funzioni per il VRWidget \textit{StartMenuWidget}:
+
+    \begin{lstlisting}[caption = Creazione Widget VR per la classe \textit{StartMenuWidget}]
+VRStartMenu = World->SpawnActor<AActor>(BP_VRStartMenu, SpawnTransform, SpawnParams);
+UWidgetComponent* WidgetComponent = VRStartMenu->FindComponentByClass<UWidgetComponent>();
+StartMenuWidget = Cast<UStartMenuWidget>(WidgetComponent->GetWidget());
+StartMenuWidget->WidgetController = this;
+    \end{lstlisting}
+
+    È possibile infine mostrare o nascondere il Blueprint desiderato attraverso la libreria \textit{ESplateVisibility} che permette di scegliere tra \textit{Visible}, \textit{Hidden} e altre opzioni.
+
+    Degno di nota è infine lo strumento \textit{UListView} che permette di inserire a tempo di esecuzioni un numero variabile di Widget all'interno di un altro Widget, potendo perciò creare dei Widget a cascata anche a tempo di esecuzione.
+    %
+    Equivalente è lo strumento \textit{UTileView}.
+    %
+    I due strumenti sono stati utilizzati rispettivamente per renderizzare il Widget per la classifica finale e per renderizzare la griglia di pulsanti con cui è possibile scegliere il formato di gara a cui partecipare.
+
+    \subsection{Il {CameraController}}
+
+    Il \textit{CameraController} è la classe implementata per permette di gestire il movimento delle camere e di cambiare visione da una camera ad un'altra in base alle esigenze.
+    
+    Sebbene potrebbe presentare funzioni simili al VRController, queste due classi non sono state pensate per avere le stesse funzioni perché il CameraController non è un sostituto dell'implementazione VR.
+    %
+    Infatti le telecamere non servono unicamente per renderizzare il mondo di gioco al vista del giocatore, ma possono renderizzare il mondo di gioco anche come texture di oggetti all'interno del mondo stesso.
+    %
+    L'implementazione di questa classe quindi può essere scalata per utilizzare l'output delle telecamere per simulare una televisione o un altro dispositivo digitale per far vedere al giocatore immerso nel mondo di gioco un canale televisivo con in onda la gara stessa.
+
+    \begin{figure}[!ht]\label{img:CineCameraActor}
+        \centering
+        \includegraphics[width=12cm]{figure/CameraActor.JPG}
+        \caption{CineCameraActor che riprendere la griglia di partenza}
+    \end{figure}
+
+    Per le camere di gioco sono state scelte le \textit{CineCameraActor} perché permettono di tenere al centro dell'inquadratura un attore nel mondo di gioco.
+    %
+    Questa caratteristica è particolarmente utile per ricreare l'effetto di una camera ferma in un punto nello spazio che gira su se stessa per inquadrare il soggetto, come accade nelle trasmissioni televisive che riprendono le competizioni.
+    %
+    È stato usato anche un oggetto CameraRigRail per ottenere un binario cinematografico per ricreare l'effetto di una telecamera che segue i cavalli.
+    %
+    Questo strumento è composto da una Spline e da un modello 3D per far visualizzare allo sviluppatore la posizione della camera lungo di essa.
+    %
+    La CameraRigRail si è dimostrata particolamente comoda in questo contesto perché visto che i cavalli si muovono lungo una Spline si è potuto impostare il carrello della stessa lunghezza del percorso.
+    %
+    A quel punto è stato possibile passare il valore della distanza a cui si trova il cavallo lungo la spline al carrello per posizionare la camera alla stessa altezza dei cavalli.
+    %
+    La position lungo il rail è standardizzata tra 0 e 1 perciò basta passare il valore di output della Timeline, per questo scopo è stata usata la funzione seguente:
+
+    \begin{lstlisting}{caption = Funzione per aggiornare la posizione della CineCamera lungo il RigRail}
+void AMetaraceCameraController::UpdateCameraPositionOnSpline(float TimelineValue)
+{
+    CameraRail->CurrentpPositionOnRail = TimelineValue;
+}
+    \end{lstlisting}
+
+    All'interno del percorso sono stati inseriti degli oggetti \textit{ATriggerBox} per poter cambiare telecamere al raggiungimento di questi trigger, nella Figura \ref{img:CineCameraActor} ne è mostrato uno.
+    %
+    Gli oggetti \textit{ATriggerBox} permettono di impostare degli eventi \textit{Overlap} che permettono di cambiare camera quando i cavalli raggiungo un punto lungo il percorso.
+
+    \begin{lstlisting}[caption = Chiamata per l'aggiunta di una funzione all'evento overlap di un \textit{TriggerBox}]
+StartRaceTriggerBox->OnActorEndOverlap.AddDynamic(this, 
+    &AMetaraceCameraController::OnStartTriggerExit);
+    \end{lstlisting}
+
+    È possibile passare da una camera ad un'altra chiamando la funzione \textit{SetViewTargetWithBlend} che offre la possibilità di avere un movimento fluido per il cambio da un'inquadratura ad un'altra su una base di un valore temporale passato in input.
+
+    \begin{lstlisting}[caption = Funzione per impostare la telecamera per la vista dell'utente]
+void AMetaraceCameraController::OnStartTriggerExit(AActor* This, AActor* Other)
+{
+    if(CineCamera)
+    {
+        PlayerController->SetViewTargetWithBlend(
+            CineCamera, 3); 
+    }
+}
+    \end{lstlisting}
+
+    \subsection{Il \textit{VRController}}
+
+    La classe \textit{VRController} si occupa di implementare le chiamate dello \textit{SceneController} quando il giocatore ha eseguito l'accesso al gioco tramite un visore per la realtò virtuale.
+
+    \begin{figure}[!ht]
+        \centering
+        \includegraphics[width=12cm]{figure/VRVisuale.png}
+        \caption{Visuale della gara in VR da una posizione appositamente creata}
+    \end{figure}
+
+    Il giocatore in questa modalità oltre che poter interagire con i widget può assistere alla gara dagli spalti e da posizioni lungo il percorso appositamente create per lo scopo.
+    %
+    Ad esempio ho creato una sala interna di un edificio che affaccia sul percorso da dove è possibile avere una visuale della gara.
+
+    Questa classe possiede un \textit{TArray} di posizioni che implementano una logica di ordinazione.
+    %
+    Le posizioni sono ordinate e posizionate lungo il percorso che fanno i cavalli in modo che il giocatore può scorrerle avanti e indietro.
+    %
+    Le funzioni che implementano questa logica sono:
+    
+    \begin{lstlisting}[ caption = Funzioni per teleportare il giocatore lungo le posizioni per assistere alla gara]
+void AVRMetaraceController::NextPosition()
+{
+    int32 temp = CurrentPosition+1;
+    if(!PlayerPositions.IsEmpty() && temp<PlayerPositions.Num() && temp>=0)
+    {
+        if(Player)
+        {
+            Player->TeleportTo(PlayerPositions[temp]->GetActorLocation(),
+                PlayerPositions[temp]->GetActorRotation());
+            CurrentPosition = temp;
+        }
+    }
+}
+
+void AVRMetaraceController::PrevPosition()
+{
+    int32 temp = CurrentPosition-1;
+    if(!PlayerPositions.IsEmpty() && temp<PlayerPositions.Num() && temp>=0)
+    {
+        if(Player)
+        {
+            Player->TeleportTo(PlayerPositions[temp]->GetActorLocation(),
+                PlayerPositions[temp]->GetActorRotation());
+            CurrentPosition = temp;
+        }
+    }
+}
+    \end{lstlisting}
 
 % Lo metto qui invece che nell'implementazione perché per ora non c'è un'implementazione ma questa cosa è stata comunque nella fase di progettazione
 

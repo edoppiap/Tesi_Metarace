@@ -161,8 +161,8 @@
     showtabs=false,                  
     tabsize=2,
     language = C++,    
-    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, UWorld, UCurveFloat, nullptr, TArray, TMap, FString, TSubclassOf},
-    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS, DECLARE_DELEGATE_OneParam, BindUObject}
+    morekeywords={int32, FTransform, FTimeline, FOnTimelineFloat, UStaticMeshComponent, USplineComponent, UWorld, UCurveFloat, nullptr, TArray, TMap, FString, TSubclassOf, AActor},
+    morekeywords=[2]{FindComponentByClass, AddInterpFloat, BindUFunction, GetTransformAtDistanceAlongSpline, SetWorldLocationAndRotation, UPROPERTY, UCLASS, UFUNCTION, DECLARE_DELEGATE_OneParam, DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam, BindUObject, AddDynamic}
    }
 
    \lstset{style=mystyle}
